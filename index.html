@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌙 Restimator - Sleep Predictor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle at top, #0a1b3d, #000814 70%);
+            min-height: 100vh;
+            padding: 30px 20px;
+            overflow-y: auto; 
+            position: relative;
+            color: white;
+        }
+
+        .star {
+            position: fixed; 
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: twinkle 2s infinite ease-in-out;
+            pointer-events: none; 
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 450px;
+            width: 100%;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            color: #dbe4ff;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #adb5bd;
+            font-size: 1em;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #e9ecef;
+            margin-bottom: 6px;
+            font-size: 1.05em;
+        }
+
+        input[type="time"],
+        input[type="number"],
+        select,
+        input[type="range"] {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background: rgba(255, 255, 255, 0.15);
+            color: #f8f9fa;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+
+        select option {
+            color: black;
+        }
+
+        .screen-time-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .emoji-reaction {
+            font-size: 2em;
+            text-align: center;
+            width: 60px;
+        }
+
+        .stress-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 6px;
+            font-size: 0.9em;
+            color: #dee2e6;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: #1e3d73;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.25s;
+        }
+
+        .submit-btn:hover {
+            background: #274b8f;
+            transform: translateY(-2px);
+        }
+
+        .results {
+            display: none;
+            background: rgba(30, 61, 115, 0.7);
+            padding: 20px;
+            border-radius: 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .result-item {
+            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 15px;
+        }
+
+        .result-item .value {
+            font-size: 1.6em;
+            font-weight: 700;
+            color: #e9ecef;
+        }
+
+        .oversleep-warning {
+            background: #d00000;
+            padding: 12px;
+            border-radius: 15px;
+            font-weight: 600;
+        }
+
+        .oversleep-safe {
+            background: #2b9348;
+            padding: 12px;
+            border-radius: 15px;
+            font-weight: 600;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #bcd0f7;
+            margin-top: 15px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top: 3px solid #bcd0f7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Star generator -->
+    <script>
+        for (let i = 0; i < 90; i++) {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            star.style.top = Math.random() * 100 + 'vh';
+            star.style.left = Math.random() * 100 + 'vw';
+            star.style.animationDuration = (1 + Math.random() * 2) + 's';
+            document.body.appendChild(star);
+        }
+    </script>
+
+    <div class="container">
+        <div class="header">
+            <h1>🌙 Restimator</h1>
+            <p>Your AI-Powered Sleep Insight</p>
+        </div>
+
+        <form id="sleepForm">
+            <label>🛏️ Bedtime</label>
+            <input type="time" id="bedtime" required>
+
+            <label>📱 Screen Time (minutes)</label>
+            <div class="screen-time-container">
+                <input type="number" id="screenTime" min="0" max="300" required>
+                <div class="emoji-reaction" id="emojiReaction">😴</div>
+            </div>
+
+            <label>😰 Stress Level</label>
+            <input type="range" id="stress" min="1" max="10" value="5">
+            <div class="stress-scale">
+                Low (1) – <span id="stressValue">5</span> – High (10)
+            </div>
+            <div class="stress-info" id="stressInfo">
+                <strong>Level 5:</strong> Balanced stress level
+            </div>
+
+            <label>🌤️ Weather</label>
+            <select id="weather" required>
+                <option value="">Select Weather</option>
+                <option value="sunny">☀️ Sunny</option>
+                <option value="cloudy">☁️ Cloudy</option>
+                <option value="rainy">🌧️ Rainy</option>
+            </select>
+
+            <label>⏰ Number of Alarms</label>
+            <input type="number" id="alarms" min="0" max="10" value="1" required>
+
+            <label>🌅 Desired Wake Time</label>
+            <input type="time" id="wakeTime" required>
+
+            <button type="submit" class="submit-btn">Predict Sleep</button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing sleep pattern...</p>
+        </div>
+
+        <div class="results" id="results">
+            <div class="result-item">
+                <h3> Predicted Sleep Duration</h3>
+                <div class="value" id="sleepDuration">-</div>
+            </div>
+
+            <div class="result-item">
+                <h3> Predicted Wake Time</h3>
+                <div class="value" id="wakeUpTime">-</div>
+            </div>
+
+            <div id="oversleepStatus"></div>
+        </div>
+    </div>
+
+    <script>
+        const screenTimeInput = document.getElementById('screenTime');
+        const emojiReaction = document.getElementById('emojiReaction');
+        const stressInput = document.getElementById('stress');
+        const stressValue = document.getElementById('stressValue');
+        const stressInfo = document.getElementById('stressInfo');
+        const form = document.getElementById('sleepForm');
+        const results = document.getElementById('results');
+        const loading = document.getElementById('loading');
+
+        const stressLevels = {
+            1: "Very Low: Relaxed",
+            2: "Low: Light stress",
+            3: "Slightly Low",
+            4: "Low-Moderate",
+            5: "Moderate: Balanced level",
+            6: "Moderate-High",
+            7: "High stress",
+            8: "Very High",
+            9: "Extreme stress",
+            10: "Critical stress"
+        };
+
+        screenTimeInput.addEventListener('input', (e) => {
+            const m = parseInt(e.target.value) || 0;
+            let emoji = '😴';
+            if (m <= 15) emoji = '😊';
+            else if (m <= 30) emoji = '🙂';
+            else if (m <= 60) emoji = '😐';
+            else if (m <= 90) emoji = '😴';
+            else emoji = '💤';
+            emojiReaction.textContent = emoji;
+        });
+
+        stressInput.addEventListener('input', (e) => {
+            stressValue.textContent = e.target.value;
+            stressInfo.textContent = stressLevels[e.target.value];
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            loading.style.display = 'block';
+            results.classList.remove('show');
+
+            const payload = {
+                bedtime: document.getElementById('bedtime').value,
+                screen_time: parseInt(document.getElementById('screenTime').value),
+                stress: parseInt(document.getElementById('stress').value),
+                weather: document.getElementById('weather').value,
+                alarms: parseInt(document.getElementById('alarms').value),
+                desired_wake: document.getElementById('wakeTime').value
+            };
+
+            try {
+                const res = await fetch('http://localhost:8000/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                document.getElementById('sleepDuration').textContent = data.sleep_duration + ' hours';
+                document.getElementById('wakeUpTime').textContent = data.predicted_wake_time;
+
+                const oversleepStatus = document.getElementById('oversleepStatus');
+                oversleepStatus.innerHTML = data.oversleep_warning
+                    ? `<div class="oversleep-warning"> ${data.message}</div>`
+                    : `<div class="oversleep-safe">${data.message}</div>`;
+
+                loading.style.display = 'none';
+                results.classList.add('show');
+
+            } catch (err) {
+                alert('Error: ' + err.message);
+                loading.style.display = 'none';
+            }
+        });
+
+        document.getElementById('bedtime').value = '23:00';
+        document.getElementById('wakeTime').value = '07:00';
+    </script>
+
+</body>
+</html>
